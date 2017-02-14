@@ -1,0 +1,89 @@
+@import url("reset.css");
+
+body
+{
+	background-color: #000;
+}
+
+.actions
+{
+	position: fixed;
+	right: 0; top: 0;
+	padding: 10px;
+	
+	z-index: 999;
+}
+.actions ul
+{
+	list-style: none;
+}
+.actions li
+{
+	display: inline-block;
+}
+.actions button
+{
+	color: #666;
+	background: none;
+	outline: none;
+	border: none;
+}
+.actions button:hover
+{
+	color: #aaa;
+}
+
+.dialog
+{
+	position: absolute;
+	right: 20px;
+	padding: 20px;
+	min-width: 150px;
+	
+	background-color: #aaa;
+	font-family: sans-serif;
+}
+
+.settings-dialog legend
+{
+	margin-bottom: 30px;
+	font-size: 16pt;
+}
+
+.setting-label
+{
+	display: inline-block;
+	float: left;
+	clear: both;
+	width: 50%;
+}
+.setting-input
+{
+	display: inline-block;
+	float: right;
+	width: 40%;
+}
+
+.settings-dialog li
+{
+	min-width: 180px;
+	margin-bottom: 10px;
+}
+
+.info-dialog p
+{
+	line-height: 150%;
+	text-align: center;
+}
+
+#app-canvas
+{
+	position: absolute;
+	/*width: 800px;
+	height: 640px;*/
+	width: 100%;
+	height: 100%;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}

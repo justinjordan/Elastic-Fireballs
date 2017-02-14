@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Elastic Fireballs</title>
+		<meta charset="utf-8"/>
+		<link rel="stylesheet" type="text/css" href="bower_components/font-awesome/css/font-awesome.min.css"/>
+		<link rel="stylesheet" type="text/css" href="css/main.css"/>
+	</head>
+	<body>
+		<div class="actions">
+			<ul>
+				<li>
+					<button class="settings-button" onclick="dialogCtrl.toggleSettings();"><i class="fa fa-gear fa-2x"></i></button>
+					<div class="dialog settings-dialog" style="display: none;">
+						<fieldset>
+							<legend>Settings</legend>
+							<ul></ul>
+						</fieldset>
+					</div>
+				</li>
+				<li>
+					<button class="info-button" onclick="dialogCtrl.toggleInfo();"><i class="fa fa-info-circle fa-2x"></i></button>
+					<div class="dialog info-dialog" style="display: none;">
+						<p>
+							Created by<br/>
+							Justin Jordan 2017
+						</p>
+					</div>
+				</li>
+			</ul>
+		</div>
+		
+		<canvas id="app-canvas"></canvas>
+		
+		<script src="bower_components/jquery/dist/jquery.min.js"></script>
+		<script src="bower_components/EaselJS/lib/easeljs-0.8.2.combined.js"></script>
+		<script src="js/app.js"></script>
+		<script src="js/dialogs.js"></script>
+	</body>
+</html>
