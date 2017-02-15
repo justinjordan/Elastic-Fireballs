@@ -24,6 +24,23 @@ efs.DialogController = function()
 			debug			: efs.app.debug,
 		};
 		
+		/*
+			TODO:  Change settings to...
+			
+			_this.settings = {
+				balls: {
+					get: function()
+					{
+						// HOW TO GET GOES HERE
+					},
+					set: function()
+					{
+						// HOW TO SET GOES HERE
+					}
+				}
+			};
+		*/
+		
 		var list = $('.settings-dialog ul');
 		for (var k in _this.settings)
 		{
