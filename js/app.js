@@ -1,501 +1,383 @@
-$(function() {
+// Create Global Namespace
+if (typeof efs == 'undefined')
+	{ efs = {}; }
+
+efs.App = function()
+{
+	var _this = this;
 	
-	var CanvasApp = function()
+	//! DEBUG MODE
+	this.debug = false;
+	
+	// Global Settings
+	this.settings = {
+		numOfBalls		: 2,		// Number of balls to create on initialization
+		gravity			: 1,		// gravitational pull
+		restitution		: 0.8,		// energy ratio retained after bounce
+		friction		: 0.1,		// speed lost when rolling
+		elasticity		: 50,		// attraction force constant
+		bandLength		: 100,		// Distance before elasticity kicks in
+	};
+	
+	// Set Variables
+	this.mouseDown = false;
+	this.mousePos = {
+		x: undefined,
+		y: undefined
+	};
+	this.stageWidth		= $('#app-canvas').width();
+	this.stageHeight	= $('#app-canvas').height();
+	
+	this.init = function()
 	{
-		var _this = this;
+		// Create Stage
+		_this.stage = new createjs.Stage("app-canvas");
+		_this.stage.canvas.width = this.stageWidth;
+		_this.stage.canvas.height = this.stageHeight;
 		
-		//! DEBUG MODE
-		this.debug = false;
+		// Create Background Container
+		_this.background = new createjs.Container();
+		_this.stage.addChild(_this.background);
 		
-		// Settings
-		this.numberOfBalls	= 2;
-		this.ballSettings = {
-			gravity			: 0,		// gravitational pull
-			restitution		: 0.8,		// energy ratio retained after bounce
-			friction		: 0.1,		// speed lost when rolling
-			elasticity		: 0.001,	// attraction force constant
-			bandLength		: 100,		// Distance before elasticity kicks in
-		};
-		
-		// Set Variables
-		this.mouseDown = false;
-		this.mousePos = {
-			x: undefined,
-			y: undefined
-		};
-		this.stageWidth		= $('#app-canvas').width();
-		this.stageHeight	= $('#app-canvas').height();
-		
-		this.init = function()
+		// Watch for Resize
+		window.addEventListener('resize', function()
 		{
-			// Create Stage
-			_this.stage = new createjs.Stage("app-canvas");
+			this.stageWidth		= $('#app-canvas').width();
+			this.stageHeight	= $('#app-canvas').height();
+			
 			_this.stage.canvas.width = this.stageWidth;
 			_this.stage.canvas.height = this.stageHeight;
-			
-			// Create Background Container
-			_this.background = new createjs.Container();
-			_this.stage.addChild(_this.background);
-			
-			// Watch for Resize
-			window.addEventListener('resize', function()
-			{
-				this.stageWidth		= $('#app-canvas').width();
-				this.stageHeight	= $('#app-canvas').height();
-				
-				_this.stage.canvas.width = this.stageWidth;
-				_this.stage.canvas.height = this.stageHeight;
-			});
-			
-			// Watch Mouse Events
-			_this.stage.on("stagemousedown", function() {
-				_this.mouseDown = true;
-				dialogCtrl.closeAll();
-			});
-			_this.stage.on("stagemouseup", function() {
-				_this.mouseDown = false;
-			});
-			
-			// Create Balls
-			_this.balls = [];
-			for (var i = 0; i < _this.numberOfBalls; i++)
-			{
-				var dir, rad, x, y, xv, yv;
-				if (_this.numberOfBalls > 1)
-				{
-					dir = i * 2 * Math.PI / _this.numberOfBalls + Math.PI/2;
-					rad = 100;
-					x = _this.stageWidth/2 + rad*Math.sin(dir);
-					y = _this.stageHeight/2 + rad*Math.cos(dir);
-					//xv = 0;//(_this.numberOfBalls + 3) * Math.sin(dir+Math.PI/2);
-					//yv = 0;//(_this.numberOfBalls + 3) * Math.cos(dir+Math.PI/2);
-				}
-				else
-				{
-					x = _this.stageWidth/2;
-					y = _this.stageHeight/2;
-				}
-				xv = 4 * Math.random() - 2;
-				yv = 4 * Math.random() - 2;
-				
-				_this.ballSettings.x = x;
-				_this.ballSettings.y = y;
-				_this.ballSettings.xv = xv;
-				_this.ballSettings.yv = yv;
-				var ball = new Ball(_this.ballSettings);
-				_this.balls.push(ball);
-				_this.stage.addChild(ball.graphic);
-			}
-			
-			// Setup mousemove listener
-			_this.stage.addEventListener('stagemousemove', _this.mouseMove);
-			
-			// Create Debug Text
-			_this.debugText = new createjs.Text("", "12px Arial", "#00ff00");
-			_this.debugText.x = 20;
-			_this.debugText.y = 30;
-			_this.debugText.textBaseline = "alphabetic";
-			_this.stage.addChild(_this.debugText);
-			
-			// Start Loop
-			_this.loop();
-		};
+		});
 		
-		this.loop = function()
-		{
-			_this.update();
-			window.setTimeout(_this.loop, 0);
-		};
+		// Watch Mouse Events
+		_this.stage.on("stagemousedown", function() {
+			_this.mouseDown = true;
+			efs.dialogCtrl.closeAll();
+		});
+		_this.stage.on("stagemouseup", function() {
+			_this.mouseDown = false;
+		});
 		
-		this.getFPS = function(et)
+		// Create Balls
+		_this.balls = [];
+		for (var i = 0; i < _this.settings.numOfBalls; i++)
 		{
-			if (et)
+			var dir, rad, x, y, xv, yv;
+			if (_this.settings.numOfBalls > 1)
 			{
-				if (!_this.fpsArray) _this.fpsArray = [];
-				
-				var averageSample = 1000; // how many fps values to average
-				
-				var fps = 1000 / (et!=0 ? et : 1);
-				_this.fpsArray.push(fps);
-				if (_this.fpsArray.length > averageSample) _this.fpsArray.shift();
-				
-				if (_this.fpsArray.length > 0)
-				{
-					var average = 0;
-					for (var i = 0; i < _this.fpsArray.length; i++)
-						{ average += _this.fpsArray[i]; }
-					average /= _this.fpsArray.length;
-					
-					return Math.round(average);
-				}
+				dir = i * 2 * Math.PI / _this.settings.numOfBalls + Math.PI/2;
+				rad = 100;
+				x = _this.stageWidth/2 + rad*Math.sin(dir);
+				y = _this.stageHeight/2 + rad*Math.cos(dir);
 			}
+			else
+			{
+				x = _this.stageWidth/2;
+				y = _this.stageHeight/2;
+			}
+			xv = 4 * Math.random() - 2;
+			yv = 4 * Math.random() - 2;
 			
-			return '---';
-		};
+			var ball = new efs.Ball(_this.settings, x, y, xv, yv);
+			_this.balls.push(ball);
+			_this.stage.addChild(ball.graphic);
+		}
 		
-		this.mouseMove = function(e)
-		{
-			for (var i = 0; i < _this.balls.length; i++)
-			{
-				var ball = _this.balls[i];
-				if (ball.drag)
-				{
-					var mouseX = e.stageX;
-					var mouseY = e.stageY;
-					
-					// Apply new position and velocity
-					var oldPosition = {
-						x: ball.x,
-						y: ball.y,
-					};
-					ball.setPosition(mouseX, mouseY);
-					ball.testBounds(true);
-					
-					ball.setVelocity(ball.x - oldPosition.x, ball.y - oldPosition.y);
-				}
-			}
-		};
+		// Setup mousemove listener
+		_this.stage.addEventListener('stagemousemove', function(e) {
+			_this.mousePos.x = e.stageX;
+			_this.mousePos.y = e.stageY;
+		});
+		//_this.stage.addEventListener('stagemousemove', _this.mouseMove);
 		
-		this.update = function() //! Game Update
+		// Create Debug Text
+		_this.debugText = new createjs.Text("", "12px Arial", "#00ff00");
+		_this.debugText.x = 20;
+		_this.debugText.y = 30;
+		_this.debugText.textBaseline = "alphabetic";
+		_this.stage.addChild(_this.debugText);
+		
+		// Start Loop
+		_this.loop();
+	};
+	
+	this.loop = function()
+	{
+		_this.update();
+		window.setTimeout(_this.loop, 0);
+	};
+	
+	this.getFPS = function(et)
+	{
+		if (et)
 		{
-			var time = new Date().getTime();
-			var et = (this.lastUpdateTime) ? time - _this.lastUpdateTime : 0; // elapsed time
-			var dt = et / 16.6; // delta time
-			_this.lastUpdateTime = time;
+			if (!_this.fpsArray) _this.fpsArray = [];
 			
-			// Apply Ball Motion
-			for (var i = 0; i < _this.balls.length; i++)
+			var averageSample = 1000; // how many fps values to average
+			
+			var fps = 1000 / (et!=0 ? et : 1);
+			_this.fpsArray.push(fps);
+			if (_this.fpsArray.length > averageSample) _this.fpsArray.shift();
+			
+			if (_this.fpsArray.length > 0)
 			{
-				var ball = _this.balls[i];
-			
-				// Catch & Release Ball
-				if (!_this.mouseDown) // Release
-				{
-					ball.stopDrag();
-					_this.dragging = false;
-				}
-				else if (!ball.drag) // Catch
-				{
-					if (!_this.dragging && ball.mouseHitTest())
-					{
-						ball.startDrag();
-						_this.dragging = true;
-					}
-				}
+				var average = 0;
+				for (var i = 0; i < _this.fpsArray.length; i++)
+					{ average += _this.fpsArray[i]; }
+				average /= _this.fpsArray.length;
 				
-				//! Update Ball
-				if (!ball.drag)
+				return Math.round(average);
+			}
+		}
+		
+		return '---';
+	};
+	
+/*
+	this.mouseMove = function(e)
+	{
+
+		for (var i = 0; i < _this.balls.length; i++)
+		{
+			var ball = _this.balls[i];
+			if (ball.drag)
+			{
+				var mouseX = e.stageX;
+				var mouseY = e.stageY;
+				
+				// Apply new position and velocity
+				var oldPosition = {
+					x: ball.x,
+					y: ball.y,
+				};
+				ball.setPosition(mouseX, mouseY);
+				ball.testBounds(true);
+				
+				ball.setVelocity(ball.x - oldPosition.x, ball.y - oldPosition.y);
+			}
+		}
+	};
+*/
+	
+	this.update = function() //! Game Update
+	{
+		var time = new Date().getTime();
+		var dt = (this.lastUpdateTime) ? (time - _this.lastUpdateTime) / 1000 : 0; // delta time
+		_this.lastUpdateTime = time;
+		
+		// Apply Ball Motion
+		for (var i = 0; i < _this.balls.length; i++)
+		{
+			var ball = _this.balls[i];
+		
+			// Catch & Release Ball
+			if (!_this.mouseDown) // Release
+			{
+				ball.stopDrag();
+				_this.dragging = false;
+			}
+			else if (!ball.drag) // Catch
+			{
+				if (!_this.dragging && ball.mouseHitTest())
 				{
-					ball.applyGravity(dt);
-					ball.applyMotion(dt);
-					ball.testBounds();
+					ball.startDrag();
+					_this.dragging = true;
 				}
 			}
 			
-			// Extra Physics for multiple balls
-			if (_this.balls.length > 1)
+			//! Update Ball
+			if (!ball.drag)
 			{
-				// Apply Attraction
-				for (var i = 0; i < _this.balls.length; i++)
-				{
-					var ball = _this.balls[i]; // ball to apply force to
-					if (ball.drag) { continue; } // no attraction if being dragged
-					
-					for (var j = 0; j < _this.balls.length; j++)
-					{
-						if (j==i) { continue; } // don't attract to self
-						
-						var attractBall = _this.balls[j];
-						
-						ball.applyAttraction(attractBall.x, attractBall.y);
-					}
-				}
-			
-				// Draw Connecting Lines
-				var lines = new createjs.Shape();
-				lines.graphics.beginStroke('#444444');
-				for (var i = 0; i < _this.balls.length; i++)
-				for (var j = i; j < _this.balls.length; j++)
-				{
-					var ball = _this.balls[i];
-					var tether = _this.balls[j];
-					
-					lines.graphics.moveTo(ball.x, ball.y);
-					lines.graphics.lineTo(tether.x, tether.y);
-				}
-				lines.graphics.endStroke();
-				_this.background.removeAllChildren();
-				_this.background.addChild(lines);
+				ball.applyGravity(dt/2); // Apply half gravity before motion
+				ball.applyMotion(dt);
+				ball.applyGravity(dt/2); // Apply rest of gravity
+				ball.testBounds();
 			}
-			else if (_this.background.children.length > 0)
+			else if (ball.x != _this.mousePos.x && ball.y != _this.mousePos.y)
 			{
-				// Clear in case there's only one ball
-				_this.background.removeAllChildren();
-			}
-			
-			// Update Stage
-			_this.stage.update();
-			
-			// Show Debug Info
-			if (_this.debug)
-			{
-				//! DEBUG DATA
-				var debugLines = {
-					"FPS":			_this.getFPS(et),
-					"mouseDown":	_this.mouseDown,
+				// Store Current Position
+				var old = {
+					x: ball.x,
+					y: ball.y,
 				};
 				
-				_this.debugText.text = '';
-				for (var k in debugLines)
+				// Update Position
+				ball.setPosition(_this.mousePos.x, _this.mousePos.y);
+				
+				// Update Velocities
+				if (dt > 0) // avoid divide by zero
+				ball.setVelocity((ball.x - old.x) / dt, (ball.y - old.y) / dt);
+			}
+		}
+		
+		// Extra Physics for multiple balls
+		if (_this.balls.length > 1)
+		{
+			// Apply Attraction
+			for (var i = 0; i < _this.balls.length; i++)
+			{
+				var ball = _this.balls[i]; // ball to apply force to
+				if (ball.drag) { continue; } // no attraction if being dragged
+				
+				for (var j = 0; j < _this.balls.length; j++)
 				{
-					var v = debugLines[k];
-					_this.debugText.text += k + ':  ' + v + '\n';
+					if (j==i) { continue; } // don't attract to self
+					
+					var attractBall = _this.balls[j];
+					
+					ball.applyAttraction(dt, attractBall.x, attractBall.y);
 				}
 			}
-			else if (_this.debugText)
-			{
-				_this.debugText.text = '';
-			}
-		};
 		
-		this.changeSetting = function(setting, value)
-		{
-			switch (setting)
+			// Draw Connecting Lines
+			var lines = new createjs.Shape();
+			lines.graphics.beginStroke('#444444');
+			for (var i = 0; i < _this.balls.length; i++)
+			for (var j = i; j < _this.balls.length; j++)
 			{
-				case 'balls':
-					value = Number(value);
-					if (!isNaN(value) && value > 0 && value.toString().indexOf('.')==-1)
-					{
-						var add = value > _this.balls.length;
-						
-						for (var i = 0, l = Math.abs(_this.balls.length - value); i < l; i++)
-						{
-							if (add)
-								{ _this.addBall(); }
-							else
-								{ _this.removeBall(); }
-						}
-						
-						return true; // Success
-					}
-				break;
+				var ball = _this.balls[i];
+				var tether = _this.balls[j];
 				
-				case 'gravity':
-				case 'restitution':
-				case 'friction':
-				case 'elasticity':
-				case 'bandLength':
-					value = parseFloat(value);
-					if (!isNaN(value))
-					{
-						_this.ballSettings[setting] = value;
-						return true;
-					}
-				break;
-				
-				case 'debug':
-					switch (value.toLowerCase())
-					{
-						case 'on':
-						case 'true':
-						case 'yes':
-						case '1':
-							_this.debug = true;
-							return true;
-						break
-						
-						case 'off':
-						case 'false':
-						case 'no':
-						case '0':
-							_this.debug = false;
-							return true;
-						break;
-					}
-				break;
+				lines.graphics.moveTo(ball.x, ball.y);
+				lines.graphics.lineTo(tether.x, tether.y);
 			}
-			
-			return false;
-		};
-		
-		this.addBall = function()
+			lines.graphics.endStroke();
+			_this.background.removeAllChildren();
+			_this.background.addChild(lines);
+		}
+		else if (_this.background.children.length > 0)
 		{
-			_this.ballSettings.x = Math.random() * _this.stageWidth;
-			_this.ballSettings.y = Math.random() * _this.stageHeight;
-			
-			var ball = new Ball(_this.ballSettings);
-			_this.stage.addChild(ball.graphic);
-			_this.balls.push(ball);
-			_this.numberOfBalls++;
-		};
-		this.removeBall = function()
+			// Clear in case there's only one ball
+			_this.background.removeAllChildren();
+		}
+		
+		// Update Stage
+		_this.stage.update();
+		
+		// Show Debug Info
+		if (_this.debug)
 		{
-			if (_this.balls.length > 0)
-			{
-				var ball = _this.balls.shift();
-				_this.stage.removeChild(ball.graphic);
-				_this.numberOfBalls--;
-			}
-		};
-		
-		// Start app
-		this.init();
-	};
-	
-	var Ball = function(settings)
-	{
-		var _this = this;
-		
-		this.x = (typeof settings['x'] != 'undefined') ? settings.x : 0;
-		this.y = (typeof settings['y'] != 'undefined') ? settings.y : 0;
-		this.xv = (typeof settings['xv'] != 'undefined') ? settings.xv : 0;
-		this.yv = (typeof settings['yv'] != 'undefined') ? settings.yv : 0;
-		this.rad = 20;
-		
-		this.drag = false;
-		
-		this.init = function()
-		{
-			_this.graphic = new createjs.Shape();
-			_this.graphic.graphics.beginFill("#0000ff").drawCircle(0, 0, _this.rad);
-			_this.graphic.x = _this.x;
-			_this.graphic.y = _this.y;
-		};
-		
-		this.applyGravity = function(dt)
-		{
-			if (_this.y < _this.graphic.stage.canvas.height - _this.rad)
-				{ _this.yv += dt * settings.gravity; }
-		};
-		
-		this.applyMotion = function(dt)
-		{
-			var xv = dt * _this.xv;
-			var yv = dt * _this.yv;
-			
-			_this.setPosition(_this.x + xv, _this.y + yv);
-		};
-		
-		this.applyAttraction = function(x, y)
-		{
-			var xdiff = _this.x - x;
-			var ydiff = _this.y - y;
-			var dist = Math.sqrt(xdiff*xdiff + ydiff*ydiff) - settings.bandLength;
-			dist = (dist<0) ? 0 : dist;
-			var dir = Math.atan2(ydiff, xdiff);
-			var k = settings.elasticity;
-			var xForce = k * dist * Math.cos(dir);
-			var yForce = k * dist * Math.sin(dir);
-			
-			_this.addVelocity(-xForce, -yForce);
-		};
-		
-		this.testBounds = function(drag)
-		{
-			var w = _this.graphic.stage.canvas.width;
-			var h = _this.graphic.stage.canvas.height;
-			
-			if (_this.x < _this.rad)
-			{
-				_this.x = _this.rad;
-				if (!drag) _this.xv *= -settings.restitution;
-			}
-			
-			if (_this.x > w - _this.rad)
-			{
-				_this.x = w - _this.rad;
-				if (!drag) _this.xv *= -settings.restitution;
-			}
-			
-			if (_this.y < _this.rad)
-			{
-				_this.y = _this.rad;
-				if (!drag) _this.yv *= -settings.restitution;
-				
-				// Apply Friction
-				if (!drag && _this.xv != 0)
-				{
-					var k = (_this.xv!=0) ? _this.xv / Math.abs(_this.xv) : 1;
-					var force = k * settings.friction;
-					if ((_this.xv > 0 && force > _this.xv) || (_this.xv < 0 && force < _this.xv))
-						{ force = _this.xv; }
-					_this.xv -= force;
-				}
-			}
-			
-			if (_this.y > h - _this.rad)
-			{
-				_this.y = h - _this.rad;
-				if (!drag) _this.yv *= -settings.restitution;
-				
-				// Apply Friction
-				if (!drag && _this.xv != 0)
-				{
-					var k = (_this.xv!=0) ? _this.xv / Math.abs(_this.xv) : 1;
-					var force = k * settings.friction;
-					if ((_this.xv > 0 && force > _this.xv) || (_this.xv < 0 && force < _this.xv))
-						{ force = _this.xv; }
-					_this.xv -= force;
-				}
-			}
-			
-			_this.setPosition(_this.x, _this.y);
-		};
-		
-		this.mouseHitTest = function()
-		{
-			var mouse = {
-				x: _this.graphic.stage.mouseX,
-				y: _this.graphic.stage.mouseY
+			//! DEBUG DATA
+			var debugLines = {
+				"FPS":			_this.getFPS(dt),
+				"mouseDown":	_this.mouseDown,
 			};
 			
-			var xdiff = mouse.x - _this.x;
-			var ydiff = mouse.y - _this.y;
-			
-			if (Math.sqrt(xdiff*xdiff + ydiff*ydiff) <= _this.rad)
+			_this.debugText.text = '';
+			for (var k in debugLines)
 			{
-				return true;
+				var v = debugLines[k];
+				_this.debugText.text += k + ':  ' + v + '\n';
 			}
-			
-			return false;
-		};
-		
-		this.setPosition = function(x, y)
+		}
+		else if (_this.debugText)
 		{
-			_this.x = x;
-			_this.y = y;
-			_this.graphic.x = x;
-			_this.graphic.y = y;
-		};
-		
-		this.setVelocity = function(xv, yv)
-		{
-			_this.xv = xv;
-			_this.yv = yv;
-		};
-		
-		this.addVelocity = function(xv, yv)
-		{
-			_this.xv += xv;
-			_this.yv += yv;
-		};
-		
-		this.startDrag = function()
-		{
-			_this.drag = true;
-			_this.xv = 0;
-			_this.yv = 0;
-		};
-		
-		this.stopDrag = function()
-		{
-			_this.drag = false;
-		};
-		
-		// Init Ball
-		this.init();
+			_this.debugText.text = '';
+		}
 	};
 	
-	window.canvasApp = new CanvasApp();
+	this.changeSetting = function(setting, value)
+	{
+		var success = false;
+		
+		switch (setting)
+		{
+			case 'balls':
+				value = Number(value);
+				if (!isNaN(value) && value > 0 && value.toString().indexOf('.')==-1)
+				{
+					var add = value > _this.balls.length;
+					
+					for (var i = 0, l = Math.abs(_this.balls.length - value); i < l; i++)
+					{
+						if (add)
+							{ _this.addBall(); }
+						else
+							{ _this.removeBall(); }
+					}
+					
+					success = true;
+				}
+			break;
+			
+			case 'gravity':
+			case 'restitution':
+			case 'friction':
+			case 'elasticity':
+			case 'bandLength':
+				value = parseFloat(value);
+				if (!isNaN(value))
+				{
+					_this.settings[setting] = value;
+					success = true;
+				}
+			break;
+			
+			case 'debug':
+				switch (value.toLowerCase())
+				{
+					case 'on':
+					case 'true':
+					case 'yes':
+					case '1':
+						_this.debug = true;
+						success = true;
+					break
+					
+					case 'off':
+					case 'false':
+					case 'no':
+					case '0':
+						_this.debug = false;
+						success = true;
+					break;
+				}
+			break;
+		}
+		
+		if (_this.debug)
+		{
+			console.log('New Settings:', _this.settings);
+		}
+		
+		return success;
+	};
+	
+	this.addBall = function(amount) // returns void
+	{
+		amount = (amount) ? amount : 1; // defaults as 1
+		
+		for (var i = 0; i < amount; i++)
+		{
+			var x = Math.random() * _this.stageWidth;
+			var y = Math.random() * _this.stageHeight;
+			
+			var ball = new efs.Ball(_this.settings, x, y);
+			
+			_this.stage.addChild(ball.graphic);
+			_this.balls.push(ball);
+			_this.settings.numOfBalls++;
+		}
+	};
+	this.removeBall = function(amount) // returns void
+	{
+		amount = (amount) ? amount : 1; // defaults as 1
+		
+		for (var i = 0; i < amount && _this.balls.length > 0; i++)
+		{
+			var ball = _this.balls.shift();
+			_this.stage.removeChild(ball.graphic);
+			_this.settings.numOfBalls--;
+		}
+		
+	};
+	
+	// Start app
+	this.init();
+};
+
+$(function() {
+	
+	efs.app = new efs.App();
 	
 });
