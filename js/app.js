@@ -15,6 +15,7 @@ efs.App = function()
 		gravity			: 1,		// gravitational pull
 		restitution		: 0.8,		// energy ratio retained after bounce
 		friction		: 0.1,		// speed lost when rolling
+		airResistance	: "Doesn't work.",
 		elasticity		: 50,		// attraction force constant
 		bandLength		: 100,		// Distance before elasticity kicks in
 	};
@@ -84,11 +85,7 @@ efs.App = function()
 		}
 		
 		// Setup mousemove listener
-		_this.stage.addEventListener('stagemousemove', function(e) {
-			_this.mousePos.x = e.stageX;
-			_this.mousePos.y = e.stageY;
-		});
-		//_this.stage.addEventListener('stagemousemove', _this.mouseMove);
+		_this.stage.addEventListener('stagemousemove', _this.mouseMove);
 		
 		// Create Debug Text
 		_this.debugText = new createjs.Text("", "12px Arial", "#00ff00");
@@ -107,15 +104,16 @@ efs.App = function()
 		window.setTimeout(_this.loop, 0);
 	};
 	
-	this.getFPS = function(et)
+	this.getFPS = function(dt)
 	{
-		if (et)
+		if (dt)
 		{
 			if (!_this.fpsArray) _this.fpsArray = [];
 			
 			var averageSample = 1000; // how many fps values to average
 			
-			var fps = 1000 / (et!=0 ? et : 1);
+			// Calculate FPS
+			var fps = 1 / (dt!=0 ? dt : 1);
 			_this.fpsArray.push(fps);
 			if (_this.fpsArray.length > averageSample) _this.fpsArray.shift();
 			
@@ -133,10 +131,8 @@ efs.App = function()
 		return '---';
 	};
 	
-/*
 	this.mouseMove = function(e)
 	{
-
 		for (var i = 0; i < _this.balls.length; i++)
 		{
 			var ball = _this.balls[i];
@@ -146,23 +142,26 @@ efs.App = function()
 				var mouseY = e.stageY;
 				
 				// Apply new position and velocity
-				var oldPosition = {
+				var old = {
 					x: ball.x,
 					y: ball.y,
 				};
+				
+				// Update Position
 				ball.setPosition(mouseX, mouseY);
 				ball.testBounds(true);
 				
-				ball.setVelocity(ball.x - oldPosition.x, ball.y - oldPosition.y);
+				// Update Velocity
+				if (_this.dt > 0)
+				ball.setVelocity((ball.x - old.x) / _this.dt, (ball.y - old.y) / _this.dt);
 			}
 		}
 	};
-*/
 	
 	this.update = function() //! Game Update
 	{
 		var time = new Date().getTime();
-		var dt = (this.lastUpdateTime) ? (time - _this.lastUpdateTime) / 1000 : 0; // delta time
+		_this.dt = (this.lastUpdateTime) ? (time - _this.lastUpdateTime) / 1000 : 0; // delta time
 		_this.lastUpdateTime = time;
 		
 		// Apply Ball Motion
@@ -188,25 +187,10 @@ efs.App = function()
 			//! Update Ball
 			if (!ball.drag)
 			{
-				ball.applyGravity(dt/2); // Apply half gravity before motion
-				ball.applyMotion(dt);
-				ball.applyGravity(dt/2); // Apply rest of gravity
+				ball.applyGravity(_this.dt/2); // Apply half gravity before motion
+				ball.applyMotion(_this.dt);
+				ball.applyGravity(_this.dt/2); // Apply rest of gravity
 				ball.testBounds();
-			}
-			else if (ball.x != _this.mousePos.x && ball.y != _this.mousePos.y)
-			{
-				// Store Current Position
-				var old = {
-					x: ball.x,
-					y: ball.y,
-				};
-				
-				// Update Position
-				ball.setPosition(_this.mousePos.x, _this.mousePos.y);
-				
-				// Update Velocities
-				if (dt > 0) // avoid divide by zero
-				ball.setVelocity((ball.x - old.x) / dt, (ball.y - old.y) / dt);
 			}
 		}
 		
@@ -225,7 +209,7 @@ efs.App = function()
 					
 					var attractBall = _this.balls[j];
 					
-					ball.applyAttraction(dt, attractBall.x, attractBall.y);
+					ball.applyAttraction(_this.dt, attractBall.x, attractBall.y);
 				}
 			}
 		
@@ -259,7 +243,7 @@ efs.App = function()
 		{
 			//! DEBUG DATA
 			var debugLines = {
-				"FPS":			_this.getFPS(dt),
+				"FPS":			_this.getFPS(_this.dt),
 				"mouseDown":	_this.mouseDown,
 			};
 			

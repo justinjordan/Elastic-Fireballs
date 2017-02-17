@@ -6,6 +6,171 @@ efs.DialogController = function()
 {
 	var _this = this;
 	
+	//! Available Settings
+	_this.settings = {
+		"Balls": {
+			get: function()
+			{
+				return efs.app.settings.numOfBalls;
+			},
+			set: function(e)
+			{
+				var value = e.target.value;
+				
+				value = Number(value);
+				if (!isNaN(value) && value > 0 && value.toString().indexOf('.')==-1)
+				{
+					var add = value > efs.app.balls.length;
+					
+					for (var i = 0, l = Math.abs(efs.app.balls.length - value); i < l; i++)
+					{
+						if (add)
+							{ efs.app.addBall(); }
+						else
+							{ efs.app.removeBall(); }
+					}
+					
+					return true;
+				}
+				
+				return false;
+			}
+		},
+		"Gravity": {
+			get: function()
+			{
+				return efs.app.settings.gravity;
+			},
+			set: function(e)
+			{
+				var value = e.target.value;
+				
+				value = parseFloat(value);
+				if (!isNaN(value))
+				{
+					efs.app.settings['gravity'] = value;
+					return true;
+				}
+				
+				return false;
+			}
+		},
+		"Restitution": {
+			get: function()
+			{
+				return efs.app.settings.restitution;
+			},
+			set: function(e)
+			{
+				var value = e.target.value;
+				
+				value = parseFloat(value);
+				if (!isNaN(value))
+				{
+					efs.app.settings['restitution'] = value;
+					return true;
+				}
+				
+				return false;
+			}
+		},
+		"Surface Friction": {
+			get: function()
+			{
+				return efs.app.settings.friction;
+			},
+			set: function(e)
+			{
+				var value = e.target.value;
+				
+				value = parseFloat(value);
+				if (!isNaN(value))
+				{
+					efs.app.settings['friction'] = value;
+					return true;
+				}
+				
+				return false;
+			}
+		},
+		"Air Resistance": {
+			get: function()
+			{
+				return efs.app.settings.airResistance
+			},
+			set: function(e) {}
+		},
+		"Elasticity": {
+			get: function()
+			{
+				return efs.app.settings.elasticity;
+			},
+			set: function(e)
+			{
+				var value = e.target.value;
+				
+				value = parseFloat(value);
+				if (!isNaN(value))
+				{
+					efs.app.settings['elasticity'] = value;
+					return true;
+				}
+				
+				return false;
+			}
+		},
+		"Band Length": {
+			get: function()
+			{
+				return efs.app.settings.bandLength;
+			},
+			set: function(e)
+			{
+				var value = e.target.value;
+				
+				value = parseFloat(value);
+				if (!isNaN(value))
+				{
+					efs.app.settings['bandLength'] = value;
+					return true;
+				}
+				
+				return false;
+			}
+		},
+		"Debug": {
+			get: function()
+			{
+				return efs.app.debug;
+			},
+			set: function(e)
+			{
+				var value = e.target.value;
+				
+				switch (value.toLowerCase())
+				{
+					case 'on':
+					case 'true':
+					case 'yes':
+					case '1':
+						efs.app.debug = true;
+						return true;
+					break
+					
+					case 'off':
+					case 'false':
+					case 'no':
+					case '0':
+						efs.app.debug = false;
+						return true;
+					break;
+				}
+				
+				return false;
+			}
+		},
+	};
+	
 	this.init = function()
 	{
 		_this.buildSettings();
@@ -13,68 +178,38 @@ efs.DialogController = function()
 	
 	this.buildSettings = function()
 	{
-		//! Available Settings
-		_this.settings = {
-			balls			: efs.app.settings.numOfBalls,
-			gravity			: efs.app.settings.gravity,
-			restitution		: efs.app.settings.restitution,
-			friction		: efs.app.settings.friction,
-			elasticity		: efs.app.settings.elasticity,
-			bandLength		: efs.app.settings.bandLength,
-			debug			: efs.app.debug,
-		};
-		
-		/*
-			TODO:  Change settings to...
-			
-			_this.settings = {
-				balls: {
-					get: function()
-					{
-						// HOW TO GET GOES HERE
-					},
-					set: function()
-					{
-						// HOW TO SET GOES HERE
-					}
-				}
-			};
-		*/
-		
 		var list = $('.settings-dialog ul');
 		for (var k in _this.settings)
 		{
-			var v = _this.settings[k];
-			var label = k.replace(/\b\w/g, function(l){ return l.toUpperCase() });
+			var setting = _this.settings[k];
+			var v = setting.get();
 			
 			var item = $('<li>');
-			
 			item.append(
-				$('<div>').addClass('setting-label').text(label)
+				$('<div>').addClass('setting-label').text(k)
 			);
 			
-			var input = $('<input>')
-				.addClass('setting-input')
-				.attr('data-setting', k);
+			var input = $('<input>').addClass('setting-input');
 			
 			if (typeof v == 'boolean')
 			{
 				input
 					.attr('type', 'checkbox')
-					.on('click', function() {
-						_this.changeSetting($(this));
-					});
-				
-				if (v) input.attr('checked', 'true')
+					.on('click', setting.set);
+					
+					if (v) input.attr('checked', 'true');
 			}
 			else
 			{
 				input
 					.attr('type', 'text')
-					.val(v)
-					.on('change', function() {
-						_this.changeSetting($(this));
-					});
+					.val(setting.get())
+					.on('keyup', function(e) 
+					{
+						// Press Enter
+						if (e.which == 13) _this.toggleSettings();
+					})
+					.on('change', setting.set);
 			}
 			
 			item.append(input);
